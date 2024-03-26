@@ -1,0 +1,103 @@
+import yfinance as yf
+from textblob import TextBlob
+import pandas as pd
+from datetime import datetime
+import matplotlib.pyplot as plt
+from seaborn import pairplot
+
+stock_symbol = 'NVDA'
+
+try:
+    # Attempt to retrieve stock data
+    stock = yf.Ticker(stock_symbol)
+    stock_data = stock.history()
+
+    # Check if data is empty
+    if stock_data.empty:
+        print("No data found for symbol:", stock_symbol)
+    else:
+        # Proceed with data analysis or visualization
+        pass
+except Exception as e:
+    print("An error occurred:", e)
+
+def time1(t):
+    date_time = datetime.fromtimestamp(t)
+    return str(date_time)
+
+news = stock.news
+sentiment_scores = []
+dates = []
+
+for row in news:
+    news_timestamp = row['providerPublishTime']
+    blob = TextBlob(row['title'])
+    sentiment_score = blob.sentiment.polarity
+    sentiment_scores.append(sentiment_score)
+    dates.append(time1(news_timestamp))
+
+plt.plot(dates, sentiment_scores)
+plt.xlabel('Date')
+plt.ylabel('Sentiment Score')
+plt.title('Sentiment Analysis over Time')
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.show()
+
+plt.plot(stock_data["Open"])
+plt.xlabel('Date')
+plt.ylabel('Price')
+plt.title('Stock Open Prices over Time')
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.show()
+
+# Plot high and low prices over time
+plt.plot(stock_data["Low"], label='Low')
+plt.plot(stock_data["High"], label='High')
+plt.xlabel('Date')
+plt.ylabel('Price')
+plt.title('Stock High and Low Prices over Time')
+plt.xticks(rotation=45)
+plt.legend()
+plt.tight_layout()
+plt.show()
+
+# Define threshold for sentiment score
+sentiment_threshold = 0.1  # You can adjust this threshold based on your analysis
+# Calculate average sentiment score over a specific time window
+sentiment_window = 7  # 7 days for example
+average_sentiment_scores = []
+
+for i in range(len(sentiment_scores) - sentiment_window + 1):
+    average_score = sum(sentiment_scores[i:i + sentiment_window]) / sentiment_window
+    average_sentiment_scores.append(average_score)
+
+# Make predictions based on sentiment scores and historical stock data
+predictions = []
+
+for avg_score in average_sentiment_scores:
+    if avg_score > sentiment_threshold:
+        predictions.append(1)  # Positive sentiment
+    else:
+        predictions.append(0)  # Negative sentiment
+
+# Plot predictions
+plt.plot(dates[:-sentiment_window + 1], predictions)
+plt.xlabel('Date')
+plt.ylabel('Prediction (1: Positive, 0: Negative)')
+plt.title('Stock Trend Predictions based on Sentiment Analysis')
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.show()
+
+# Plot stock data
+plt.plot(stock_data["Open"])
+plt.xlabel('Date')
+plt.ylabel('Price')
+plt.title('Stock Open Prices over Time')
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.show()
+
+pairplot(stock_data, diag_kind="kde")
